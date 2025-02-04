@@ -93,7 +93,7 @@ function the_media_upload_tabs() {
 		foreach ( $tabs as $callback => $text ) {
 			$class = '';
 
-			if ( $current == $callback ) {
+			if ( $current === $callback ) {
 				$class = " class='current'";
 			}
 
@@ -422,14 +422,18 @@ function media_handle_upload( $file_id, $post_id, $post_data = array(), $overrid
 	$attachment_id = wp_insert_attachment( $attachment, $file, $post_id, true );
 
 	if ( ! is_wp_error( $attachment_id ) ) {
-		// Set a custom header with the attachment_id.
-		// Used by the browser/client to resume creating image sub-sizes after a PHP fatal error.
+		/*
+		 * Set a custom header with the attachment_id.
+		 * Used by the browser/client to resume creating image sub-sizes after a PHP fatal error.
+		 */
 		if ( ! headers_sent() ) {
 			header( 'X-WP-Upload-Attachment-ID: ' . $attachment_id );
 		}
 
-		// The image sub-sizes are created during wp_generate_attachment_metadata().
-		// This is generally slow and may cause timeouts or out of memory errors.
+		/*
+		 * The image sub-sizes are created during wp_generate_attachment_metadata().
+		 * This is generally slow and may cause timeouts or out of memory errors.
+		 */
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $file ) );
 	}
 
@@ -523,12 +527,14 @@ function media_handle_sideload( $file_array, $post_id = 0, $desc = null, $post_d
  * @since 5.3.0 Formalized the existing and already documented `...$args` parameter
  *              by adding it to the function signature.
  *
- * @global int $body_id
+ * @global string $body_id
  *
  * @param callable $content_func Function that outputs the content.
  * @param mixed    ...$args      Optional additional parameters to pass to the callback function when it's called.
  */
 function wp_iframe( $content_func, ...$args ) {
+	global $body_id;
+
 	_wp_admin_html_begin();
 	?>
 	<title><?php bloginfo( 'name' ); ?> &rsaquo; <?php _e( 'Uploads' ); ?> &#8212; <?php _e( 'WordPress' ); ?></title>
@@ -599,8 +605,8 @@ function wp_iframe( $content_func, ...$args ) {
 
 	$body_id_attr = '';
 
-	if ( isset( $GLOBALS['body_id'] ) ) {
-		$body_id_attr = ' id="' . $GLOBALS['body_id'] . '"';
+	if ( isset( $body_id ) ) {
+		$body_id_attr = ' id="' . $body_id . '"';
 	}
 
 	?>
@@ -634,7 +640,7 @@ function wp_iframe( $content_func, ...$args ) {
  */
 function media_buttons( $editor_id = 'content' ) {
 	static $instance = 0;
-	$instance++;
+	++$instance;
 
 	$post = get_post();
 
@@ -767,7 +773,7 @@ function media_upload_form_handler() {
 				$post['menu_order'] = $attachment['menu_order'];
 			}
 
-			if ( isset( $send_id ) && $attachment_id == $send_id ) {
+			if ( isset( $send_id ) && $attachment_id === $send_id ) {
 				if ( isset( $attachment['post_parent'] ) ) {
 					$post['post_parent'] = $attachment['post_parent'];
 				}
@@ -831,7 +837,7 @@ function media_upload_form_handler() {
 		if ( ! empty( $attachment['url'] ) ) {
 			$rel = '';
 
-			if ( strpos( $attachment['url'], 'attachment_id' ) || get_attachment_link( $send_id ) == $attachment['url'] ) {
+			if ( str_contains( $attachment['url'], 'attachment_id' ) || get_attachment_link( $send_id ) === $attachment['url'] ) {
 				$rel = " rel='attachment wp-att-" . esc_attr( $send_id ) . "'";
 			}
 
@@ -1166,7 +1172,7 @@ function image_align_input_fields( $post, $checked = '' ) {
 	foreach ( $alignments as $name => $label ) {
 		$name     = esc_attr( $name );
 		$output[] = "<input type='radio' name='attachments[{$post->ID}][align]' id='image-align-{$name}-{$post->ID}' value='$name'" .
-			( $checked == $name ? " checked='checked'" : '' ) .
+			( $checked === $name ? " checked='checked'" : '' ) .
 			" /><label for='image-align-{$name}-{$post->ID}' class='align image-align-{$name}-label'>$label</label>";
 	}
 
@@ -1216,7 +1222,7 @@ function image_size_input_fields( $post, $check = '' ) {
 		$css_id  = "image-size-{$size}-{$post->ID}";
 
 		// If this size is the default but that's not available, don't select it.
-		if ( $size == $check ) {
+		if ( $size === $check ) {
 			if ( $enabled ) {
 				$checked = " checked='checked'";
 			} else {
@@ -1359,7 +1365,7 @@ function image_media_send_to_editor( $html, $attachment_id, $attachment ) {
 		$align = ! empty( $attachment['align'] ) ? $attachment['align'] : 'none';
 		$size  = ! empty( $attachment['image-size'] ) ? $attachment['image-size'] : 'medium';
 		$alt   = ! empty( $attachment['image_alt'] ) ? $attachment['image_alt'] : '';
-		$rel   = ( strpos( $url, 'attachment_id' ) || get_attachment_link( $attachment_id ) === $url );
+		$rel   = ( str_contains( $url, 'attachment_id' ) || get_attachment_link( $attachment_id ) === $url );
 
 		return get_image_send_to_editor( $attachment_id, $attachment['post_excerpt'], $attachment['post_title'], $align, $url, $rel, $size, $alt );
 	}
@@ -1658,7 +1664,8 @@ function get_media_item( $attachment_id, $args = null ) {
 	$meta       = wp_get_attachment_metadata( $post->ID );
 
 	if ( isset( $meta['width'], $meta['height'] ) ) {
-		$media_dims .= "<span id='media-dims-$post->ID'>{$meta['width']}&nbsp;&times;&nbsp;{$meta['height']}</span> ";
+		/* translators: 1: A number of pixels wide, 2: A number of pixels tall. */
+		$media_dims .= "<span id='media-dims-$post->ID'>" . sprintf( __( '%1$s by %2$s pixels' ), $meta['width'], $meta['height'] ) . '</span>';
 	}
 
 	/**
@@ -1755,7 +1762,7 @@ function get_media_item( $attachment_id, $args = null ) {
 	if ( 'image' === $type && $calling_post_id
 		&& current_theme_supports( 'post-thumbnails', get_post_type( $calling_post_id ) )
 		&& post_type_supports( get_post_type( $calling_post_id ), 'thumbnail' )
-		&& get_post_thumbnail_id( $calling_post_id ) != $attachment_id
+		&& get_post_thumbnail_id( $calling_post_id ) !== $attachment_id
 	) {
 
 		$calling_post             = get_post( $calling_post_id );
@@ -2079,13 +2086,11 @@ function media_upload_header() {
  *
  * @global string $type
  * @global string $tab
- * @global bool   $is_IE
- * @global bool   $is_opera
  *
  * @param array $errors
  */
 function media_upload_form( $errors = null ) {
-	global $type, $tab, $is_IE, $is_opera;
+	global $type, $tab;
 
 	if ( ! _device_can_upload() ) {
 		echo '<p>' . sprintf(
@@ -2194,6 +2199,11 @@ function media_upload_form( $errors = null ) {
 		$plupload_init['webp_upload_error'] = true;
 	}
 
+	// Check if AVIF images can be edited.
+	if ( ! wp_image_editor_supports( array( 'mime_type' => 'image/avif' ) ) ) {
+		$plupload_init['avif_upload_error'] = true;
+	}
+
 	/**
 	 * Filters the default Plupload settings.
 	 *
@@ -2267,11 +2277,11 @@ function media_upload_form( $errors = null ) {
 		<label class="screen-reader-text" for="async-upload">
 			<?php
 			/* translators: Hidden accessibility text. */
-			_e( 'Upload' );
+			_ex( 'Upload', 'verb' );
 			?>
 		</label>
 		<input type="file" name="async-upload" id="async-upload" />
-		<?php submit_button( __( 'Upload' ), 'primary', 'html-upload', false ); ?>
+		<?php submit_button( _x( 'Upload', 'verb' ), 'primary', 'html-upload', false ); ?>
 		<a href="#" onclick="try{top.tb_remove();}catch(e){}; return false;"><?php _e( 'Cancel' ); ?></a>
 	</p>
 	<div class="clear"></div>
@@ -2823,7 +2833,7 @@ function media_upload_library_form( $errors ) {
 				'format'    => '',
 				'prev_text' => __( '&laquo;' ),
 				'next_text' => __( '&raquo;' ),
-				'total'     => ceil( $wp_query->found_posts / 10 ),
+				'total'     => (int) ceil( $wp_query->found_posts / 10 ),
 				'current'   => $q['paged'],
 			)
 		);
@@ -3231,8 +3241,9 @@ function edit_form_image_editor( $post ) {
 		printf(
 			/* translators: 1: Link to tutorial, 2: Additional link attributes, 3: Accessibility text. */
 			__( '<a href="%1$s" %2$s>Learn how to describe the purpose of the image%3$s</a>. Leave empty if the image is purely decorative.' ),
-			esc_url( 'https://www.w3.org/WAI/tutorials/images/decision-tree' ),
-			'target="_blank" rel="noopener"',
+			/* translators: Localized tutorial, if one exists. W3C Web Accessibility Initiative link has list of existing translations. */
+			esc_url( __( 'https://www.w3.org/WAI/tutorials/images/decision-tree/' ) ),
+			'target="_blank"',
 			sprintf(
 				'<span class="screen-reader-text"> %s</span>',
 				/* translators: Hidden accessibility text. */
@@ -3256,7 +3267,14 @@ function edit_form_image_editor( $post ) {
 		'textarea_name' => 'content',
 		'textarea_rows' => 5,
 		'media_buttons' => false,
-		'tinymce'       => false,
+		/**
+		 * Filters the TinyMCE argument for the media description field on the attachment details screen.
+		 *
+		 * @since 6.6.0
+		 *
+		 * @param bool $tinymce Whether to activate TinyMCE in media description field. Default false.
+		 */
+		'tinymce'       => apply_filters( 'activate_tinymce_for_media_description', false ),
 		'quicktags'     => $quicktags_settings,
 	);
 
@@ -3297,7 +3315,8 @@ function attachment_submitbox_metadata() {
 	$meta       = wp_get_attachment_metadata( $attachment_id );
 
 	if ( isset( $meta['width'], $meta['height'] ) ) {
-		$media_dims .= "<span id='media-dims-$attachment_id'>{$meta['width']}&nbsp;&times;&nbsp;{$meta['height']}</span> ";
+		/* translators: 1: A number of pixels wide, 2: A number of pixels tall. */
+		$media_dims .= "<span id='media-dims-$attachment_id'>" . sprintf( __( '%1$s by %2$s pixels' ), $meta['width'], $meta['height'] ) . '</span>';
 	}
 	/** This filter is documented in wp-admin/includes/media.php */
 	$media_dims = apply_filters( 'media_meta', $media_dims, $post );
@@ -3431,6 +3450,9 @@ function attachment_submitbox_metadata() {
 						if ( ! empty( $meta['bitrate_mode'] ) ) {
 							echo ' ' . strtoupper( esc_html( $meta['bitrate_mode'] ) );
 						}
+						break;
+					case 'length_formatted':
+						echo human_readable_duration( $meta['length_formatted'] );
 						break;
 					default:
 						echo esc_html( $meta[ $key ] );

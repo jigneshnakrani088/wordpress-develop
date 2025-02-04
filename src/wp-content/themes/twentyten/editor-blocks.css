@@ -149,7 +149,7 @@ Description: Used to style blocks in the editor.
 
 /* Caption styles */
 
-[class^="wp-block-"] figcaption {
+[class^="wp-block-"]:not(.wp-block-gallery) > figcaption {
 	color: #777;
 	font-family: "Helvetica Neue", Arial, Helvetica, "Nimbus Sans L", sans-serif;
 }
@@ -294,6 +294,14 @@ p.has-drop-cap:not(:focus)::first-letter {
 	padding-top: 0;
 }
 
+.wp-block-table[style*="font-size"] *,
+.wp-block-table[class*="-font-size"] *,
+.wp-block-calendar[style*="font-size"] *,
+.wp-block-calendar[class*="-font-size"] * {
+	font-size: inherit;
+	line-height: 1.5;
+}
+
 /*--------------------------------------------------------------
 5.0 Blocks - Widgets
 --------------------------------------------------------------*/
@@ -372,4 +380,10 @@ p.has-drop-cap:not(:focus)::first-letter {
 :root .editor-styles-wrapper .has-white-background-color,
 :root .editor-styles-wrapper .has-white-background-color:visited {
 	background-color: #fff;
+}
+
+/* Inserter Icon */
+
+.editor-styles-wrapper .block-editor-inserter path {
+	color: #fff;
 }
