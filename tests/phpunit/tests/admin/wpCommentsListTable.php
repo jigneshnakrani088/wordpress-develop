@@ -137,14 +137,7 @@ OPTIONS;
 
 		wp_set_current_user( $u );
 
-		$this->assertTrue( current_user_can( 'moderate_comments' ) );
-
-		ob_start();
-		$this->table->bulk_actions();
-		$output = ob_get_clean();
-
-		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( '<option value="-1">Bulk actions</option>', $output );
+		$this->assertStringContainsString( '<option value="-1">Bulk actions</option>', get_echo( array( $this->table, 'bulk_actions' ) ) );
 	}
 
 	/**
@@ -155,19 +148,13 @@ OPTIONS;
 	public function test_bulk_action_menu_should_not_be_shown_if_user_has_no_capability() {
 		$u = self::factory()->user->create_and_get(
 			array(
-				'role' => 'subscriber',
+				'role' => 'author',
 			)
 		);
 
 		wp_set_current_user( $u );
 
-		$this->assertFalse( current_user_can( 'moderate_comments' ) );
-
-		ob_start();
-		$this->table->bulk_actions();
-		$output = ob_get_clean();
-
-		$this->assertEmpty( $output );
+		$this->assertEmpty( get_echo( array( $this->table, 'bulk_actions' ) ) );
 	}
 
 	/**
